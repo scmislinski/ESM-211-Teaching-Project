@@ -4,26 +4,36 @@ format: html
 editor: visual
 ---
 
-## Quarto
+## library
 ```{r}
+library(enmpa)
+library(terra)
+```
+
+```{r}
+# Species presence absence data associated with environmental variables
+data("enm_data", package = "enmpa")
+
+# Data for final model evaluation 
+data("test", package = "enmpa")
+
+# Environmental data as raster layers for projections
+env_vars <- rast(system.file("extdata", "vars.tif", package = "enmpa"))
+
+# Check the example data
+head(enm_data)
 
 ```
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
 ```{r}
-1 + 1
+plot(env_vars, mar = c(1, 1, 2, 4))
+```
+# Example from git
+```{r}
+sn_bio1  <- niche_signal(data = enm_data, variables = "bio_1", 
+                         condition = "Sp", method = "univariate")
+
+sn_bio12 <- niche_signal(data = enm_data, variables = "bio_12",
+                         condition = "Sp", method = "univariate")
 ```
 
-You can add options to executable code like this
-
-```{r}
-#| echo: false
-2 * 2
-```
-
-The `echo: false` option disables the printing of code (only output is displayed).
