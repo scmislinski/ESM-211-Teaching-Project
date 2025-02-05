@@ -33,11 +33,81 @@ head(enm_data)
 plot(env_vars, mar = c(1, 1, 2, 4)) 
 ```
 # Example from git
-```{r}
-sn_bio1  <- niche_signal(data = enm_data, variables = "bio_1", 
-                         condition = "Sp", method = "univariate")
 
-sn_bio12 <- niche_signal(data = enm_data, variables = "bio_12",
-                         condition = "Sp", method = "univariate")
+## Model Selection and Calibration
+The function calibration_glm() is a general function that allows to perform the following steps:
+
+Partition data in k-folds
+Create formulas for candidate models
+Fit and evaluate candidate models
+Select best performing models
+Model selection consists of three steps:
+
+A first filter to keep the models with ROC AUC >= 0.5 (statistically significant models).
+A second filter to maintain only models that meet a selection_criterion (“TSS”: TSS >= 0.4; or “ESS”: maximum Accuracy - tolerance).
+From those, pick the ones with delta AIC <= 2.
+
+The results are returned as a list containing:
+
+Selected models (*$selected)
+A summary of statistics for all models (*$summary)
+Results obtained from cross-validation for all models (*$calibration_results)
+Input data used (*$data)
+The weights used (*$weights)
+The list of partition indices (*$kfold_index_partition)
+```{r}
+# Linear + quadratic + products responses
+calibration <- calibration_glm(data = enm_data, dependent = "Sp",
+                               independent = c("bio_1", "bio_12"),
+                               response_type = "lpq",
+                               formula_mode = "intensive", 
+                               exclude_bimodal = TRUE, 
+                               selection_criterion = "TSS",
+                               cv_kfolds = 5, 
+                               verbose = FALSE)
+calibration
+#> enmpa-class `enmpa_calibration`:
+#> $selected             : Selected models (N = 2)
+#> $summary              : A summary of statistics for all models. 
+#> $calibration_results  : Results obtained from cross-validation for all models. 
+#> $data                 : Data used for calibration. 
+#> $partitioned_data     : k-fold indexes (k = 5)
+#> $weights              : Use of weights (FALSE)
+ 
+summary(calibration)
 ```
+Models 29 and 31 were the best. Their names are ModelID_29 and ModelID_31
+
+## Fitting and predictions for selected models
+After one or more models are selected, the next steps are the fitting and projection of these models. In this case we are projecting the models to the whole area of interest. Models can be transferred with three options: 
+Free Extrapolation (‘E’) 
+Extrapolation with clamping (‘EC’) 
+No Extrapolation (‘NE’).
+
+
+```{r}
+# Fitting selected models
+fits <- fit_selected(calibration) 
+
+# Prediction for the two selected models and their consensus
+preds_E  <- predict_selected(fits, newdata = env_vars, extrapolation_type = "E",
+                             consensus = TRUE)
+preds_NE <- predict_selected(fits, newdata = env_vars,extrapolation_type = "NE",
+                             consensus = TRUE)
+
+# Visualization 
+plot(c(preds_E$predictions, preds_NE$predictions),
+     main = c("Model ID 29 (Free Extrapolation)", "Model ID 31 (Free Extrapolation)",
+              "Model ID 29 (No Extrapolation)", "Model ID 31 (No Extrapolation)"),
+     mar = c(1, 1, 2, 5))
+```
+
+# Response Curves 
+An important step in understanding the ecological niches with these models is to explore variable response curves. The following lines of code help to do so:
+```{r}
+# Response Curves for Bio_1 and Bio_2, first selected model 
+response_curve(fitted = fits, modelID = "ModelID_29", variable = "bio_1")
+response_curve(fitted = fits, modelID = "ModelID_29", variable = "bio_12")
+```
+
 
