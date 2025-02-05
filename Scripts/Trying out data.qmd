@@ -10,6 +10,8 @@ Use terra for the mapping
 ```{r}
 library(enmpa)
 library(terra)
+library(tidyverse)
+library(here)
 ```
 
 ```{r}
@@ -57,7 +59,7 @@ The weights used (*$weights)
 The list of partition indices (*$kfold_index_partition)
 ```{r}
 # Linear + quadratic + products responses
-calibration <- calibration_glm(data = enm_data, dependent = "Sp",
+calibration <- calibration_glm(data = m_m_df, dependent = "pres_abs",
                                independent = c("bio_1", "bio_12"),
                                response_type = "lpq",
                                formula_mode = "intensive", 
@@ -110,4 +112,9 @@ response_curve(fitted = fits, modelID = "ModelID_29", variable = "bio_1")
 response_curve(fitted = fits, modelID = "ModelID_29", variable = "bio_12")
 ```
 
+# Loading Our Data
+```{r}
+m_m_df <- read_csv(here('Data','monarch_milkweed.csv')) 
+
+```
 

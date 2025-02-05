@@ -1,0 +1,23 @@
+---
+title: "Modeling Out Data"
+format: html
+editor: visual
+---
+
+## library
+
+Use the library enmpa for the tools Use terra for the mapping
+
+```{r}
+library(enmpa)
+library(terra)
+library(tidyverse)
+library(here)
+```
+
+# Loading Our Data
+
+```{r}
+m_m_df <- read_csv(here('Data','monarch_milkweed.csv')) 
+
+```
