@@ -20,4 +20,8 @@ library(here)
 ```{r}
 m_m_df <- read_csv(here('Data','monarch_milkweed.csv')) 
 
+# Environmental data as raster layers for projections
+env_vars <- rast(system.file("extdata", "vars.tif", package = "enmpa"))
+
+
 ```
