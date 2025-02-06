@@ -15,9 +15,9 @@ library(geodata)
 #bioclim_data<-worldclim_global(var="bio",res=2.5, path="data/")
 
 #load the data
-obs_data<-read_csv(here("data","Monarch.csv")) |>
+obs_data<-read_csv(here("Data","Monarch.csv")) |>
   select(gbifID,decimalLatitude, decimalLongitude) |> drop_na()|>
-  rename(latitude=decimalLatitude) |> 
+  rename(latitude=decimalLatitude) |>
   rename(longitude=decimalLongitude)
 #milkweed_data<-read_csv(here("data","monarch.csv"))
 
@@ -91,4 +91,4 @@ bioclim_extract <- extract(x = bioclim_data,
 # Add the point and climate datasets together
 points_climate <- cbind(all_points, bioclim_extract)
 
-#now you can go forward with teaching your package! 
+#now you can go forward with teaching your package!
