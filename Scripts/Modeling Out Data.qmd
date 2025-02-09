@@ -31,14 +31,14 @@ bioclim_data <- worldclim_global(var = "bio",
 
 ```{r}
 #This is the milkweed data
-obs_data_mw<-read_csv(here("Data","Milkweed.csv")) |>
-  select(gbifID,decimalLatitude, decimalLongitude) |> drop_na()|>
+obs_data_mw <- read_csv(here("Data","Milkweed.csv")) |>
+  select(gbifID, decimalLatitude, decimalLongitude) |> drop_na()|>
   rename(latitude=decimalLatitude) |> 
   rename(longitude=decimalLongitude)
 
 #This is the monarch data
 obs_data_m <- read_csv(here('Data','Monarch.csv')) |>
-  select(gbifID,decimalLatitude, decimalLongitude) |> drop_na()|>
+  select(gbifID, decimalLatitude, decimalLongitude) |> drop_na()|>
   rename(latitude=decimalLatitude) |> 
   rename(longitude=decimalLongitude)
 
@@ -132,10 +132,49 @@ will do this later once I know it worked for the milkweed data
 # Running the enmpa Package
 
 ```{r}
+points_climate_mw <- as.data.frame(points_climate_mw, xy = TRUE)
 
+calibration <- calibration_glm(data = points_climate_mw, dependent = "pa",
+                               independent = c("wc2.1_2.5m_bio_1", "wc2.1_2.5m_bio_12"),
+                               response_type = "lpq",
+                               formula_mode = "intensive", 
+                               exclude_bimodal = TRUE, 
+                               selection_criterion = "TSS",
+                               cv_kfolds = 5, 
+                               verbose = FALSE)
+calibration
+#> enmpa-class `enmpa_calibration`:
+#> $selected             : Selected models (N = 2)
+#> $summary              : A summary of statistics for all models. 
+#> $calibration_results  : Results obtained from cross-validation for all models. 
+#> $data                 : Data used for calibration. 
+#> $partitioned_data     : k-fold indexes (k = 5)
+#> $weights              : Use of weights (FALSE)
+ 
+summary(calibration)
 ```
 
 
+## Fitting the Model
+
+```{r}
+env_vars <- rast(system.file("extdata", "vars.tif", package = "enmpa"))
+
+
+fits <- fit_selected(calibration) 
+
+# Prediction for the two selected models and their consensus
+preds_E  <- predict_selected(fits, newdata = env_vars, extrapolation_type = "E",
+                             consensus = TRUE)
+preds_NE <- predict_selected(fits, newdata = env_vars,extrapolation_type = "NE",
+                             consensus = TRUE)
+
+# Visualization 
+plot(c(preds_E$predictions, preds_NE$predictions),
+     main = c("Model ID 31 (Free Extrapolation)",
+              "Model ID 31 (No Extrapolation)"),
+     mar = c(1, 1, 2, 5))
+```
 
 
 
