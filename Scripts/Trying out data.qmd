@@ -59,14 +59,13 @@ The weights used (*$weights)
 The list of partition indices (*$kfold_index_partition)
 ```{r}
 # Linear + quadratic + products responses
-calibration <- calibration_glm(data = m_m_df, dependent = "pres_abs",
+calibration <- calibration_glm(data = enm_data, dependent = "Sp",
                                independent = c("bio_1", "bio_12"),
                                response_type = "lpq",
                                formula_mode = "intensive", 
                                exclude_bimodal = TRUE, 
                                selection_criterion = "TSS",
-                               cv_kfolds = 5, 
-                               verbose = FALSE)
+                               cv_kfolds = 5, verbose = FALSE)
 calibration
 #> enmpa-class `enmpa_calibration`:
 #> $selected             : Selected models (N = 2)
@@ -75,8 +74,6 @@ calibration
 #> $data                 : Data used for calibration. 
 #> $partitioned_data     : k-fold indexes (k = 5)
 #> $weights              : Use of weights (FALSE)
- 
-summary(calibration)
 ```
 Models 29 and 31 were the best. Their names are ModelID_29 and ModelID_31
 

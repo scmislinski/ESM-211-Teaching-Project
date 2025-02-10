@@ -21,11 +21,11 @@ execute:
 Use the library enmpa for the tools Use terra for the mapping
 
 ```{r}
-library(enmpa)
-library(terra)
-library(tidyverse)
-library(here)
-library(geodata)
+library(enmpa) #this has the functions for running the models
+library(terra) #this package helps with the visulization
+library(tidyverse) #keeps things clean
+library(here) #makes saving and uploading data sets easier
+library(geodata) #has the 
 library(predicts)
 
 ```
@@ -52,7 +52,7 @@ obs_data_mw <- read_csv(here("Data","Milkweed.csv")) |>
   rename(latitude=decimalLatitude) |> 
   rename(longitude=decimalLongitude)
 
-#This is the monarch data
+#This is the monarch data Need to delete before the demo
 obs_data_m <- read_csv(here('Data','Monarch.csv')) |>
   select(gbifID, decimalLatitude, decimalLongitude) |> drop_na()|>
   rename(latitude=decimalLatitude) |> 
@@ -206,6 +206,8 @@ response_curve(fitted = fits, modelID = "ModelID_31", variable = "wc2.1_2.5m_bio
 Run the demo but with the monarch data set.
 
 ## Load, Clean, and Create Psudo Absence Data
+**Plot the monarch data. What are the differences and similarities between the monarch map and the milkweed map that we made in the demo?**
+
 
 ```{r}
 
