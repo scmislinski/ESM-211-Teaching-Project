@@ -27,8 +27,9 @@ data("test", package = "enmpa")
 env_vars <- rast(system.file("extdata", "vars.tif", package = "enmpa"))
 
 # Check the example data
-head(enm_data)
-
+head(env_vars)
+pa <- enmpa::enm_data
+test<-enmpa::test
 ```
 
 ```{r}

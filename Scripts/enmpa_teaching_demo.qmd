@@ -238,8 +238,8 @@ preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "
 
 # Visualization of the Models
 plot(c(preds_E$predictions, preds_NE$predictions),
-     main = c("Model ID 31 (Free Extrapolation)",
-              "Model ID 31 (No Extrapolation)"),
+     main = c("Model ID 7 (Free Extrapolation)",
+              "Model ID 7 (No Extrapolation)"),
      mar = c(1, 1, 2, 5))
 ```
 
