@@ -1,0 +1,184 @@
+---
+title: "ENMPA Homework Assignment Key"
+format: 
+  html: 
+    code-fold: show
+    toc: true
+    number-sections: true
+    embed-resources: true
+    message: false 
+    warning: false
+editor: visual
+theme: lumen
+execute:
+  echo: true
+  message: false
+  warning: false
+---
+
+# library
+
+Use the library enmpa for the tools Use terra for the mapping
+
+```{r}
+library(enmpa) #this has the functions for running the models
+library(terra) #this package helps with the visulization
+library(tidyverse) #keeps things clean
+library(here) #makes saving and uploading data sets easier
+library(geodata) #has the 
+library(predicts)
+
+```
+## Getting the Bio Data
+
+This code gets the bioclim data
+
+```{r}
+#load bioclim data. This data is used for fitting the model and making a pretty graph
+bioclim_data <- worldclim_global(var = "bio",
+                                    res = 2.5,
+                                    path = "Data/") 
+```
+
+## Load, Clean, and Create Psudo Absence Data
+**Plot the monarch data. What are the differences and similarities between the monarch map and the milkweed map that we made in the demo?**
+
+
+```{r}
+obs_data_m <- read_csv(here('Data','Monarch.csv')) |>
+  select(gbifID, decimalLatitude, decimalLongitude) |> drop_na()|>
+  rename(latitude=decimalLatitude) |> 
+  rename(longitude=decimalLongitude)
+
+# This bit of code allows us to crop the bioclim data for just the section we have for the milkweed.
+max_lat <- ceiling(max(obs_data_m$latitude))
+min_lat <- floor(min(obs_data_m$latitude))
+max_lon <- ceiling(max(obs_data_m$longitude))
+min_lon <- floor(min(obs_data_m$longitude))
+
+# Store boundaries in a single extent object
+geographic_extent <- ext(x = c(min_lon, max_lon, min_lat, max_lat))
+
+# This makes a pretty map for our milkweed data.
+world_map <- world(resolution = 3,
+                   path = "data/")
+# Crop the map to our area of interest
+my_map <- crop(x = world_map, y = geographic_extent)
+# Plot the base map
+plot(my_map,
+     axes = TRUE,
+     col = "grey95")
+# Add the points for individual observations
+points(x = obs_data_m$longitude,
+       y = obs_data_m$latitude,
+       col = "darkorange",
+       pch = 20,
+       cex = 0.75)
+#prepare the data for modeling
+
+sample_extent <- geographic_extent * 1.25
+# Crop bioclim data to desired extent
+bioclim_data <- crop(x = bioclim_data, y = sample_extent)
+
+# Plot the first of the bioclim variables to check on cropping
+plot(bioclim_data[[1]]) #this a good way to make sure the boundries are good!
+
+##### Psudo absinces 
+set.seed(1234) #This insures we get the same results every time. You can always change it to your favorite number
+
+# Randomly sample points (same number as our observed points)
+background_m <- spatSample(x = bioclim_data,
+                         size = 500, # generate 500 pseudo-absence points
+                         values = FALSE, # don't need values
+                         na.rm = TRUE, # don't sample from ocean
+                         xy = TRUE) # just need coordinates
+
+# Pull out coordinate columns, x (longitude) first, then y (latitude) from
+# saguaro data
+presence_m  <- obs_data_m[, c("longitude", "latitude")]
+
+# Add column indicating presence
+presence_m$pa <- 1
+
+# Convert background data to a data frame
+absence_m <- as.data.frame(background_m)
+# Update column names so they match presence points
+colnames(absence_m) <- c("longitude", "latitude")
+# Add column indicating absence
+absence_m$pa <- 0
+# Join data into single data frame
+all_points_m <- rbind(presence_m, absence_m)
+
+
+#add the climate data to the milk weed data
+bioclim_extract_m <- terra::extract(x = bioclim_data,
+                           y = all_points_m[, c("longitude", "latitude")],
+                           ID = FALSE) # No need for an ID column 
+#### for what ever reason, you need to specify that the extract function is coming from the terra package so the "terra::" portion is absolutely critical
+
+# Add the point and climate datasets together
+points_climate_m <- cbind(all_points_m, bioclim_extract_m) 
+
+#select the columns that you need. 
+points_climate_m <- points_climate_m |> select(longitude, latitude, pa, wc2.1_2.5m_bio_1, wc2.1_2.5m_bio_12)
+```
+
+## Use the calibration_glm() Function to Identify Best Model
+
+**What is the best model?**
+
+```{r}
+
+
+get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
+             type = "lq", mode = "moderate")
+
+points_climate_m <- as.data.frame(points_climate_m, xy = TRUE)
+
+calibration <- calibration_glm(data = points_climate_m, dependent = "pa",
+                               independent = c("wc2.1_2.5m_bio_1", "wc2.1_2.5m_bio_12"),
+                               response_type = "lpq",
+                               formula_mode = "moderate", 
+                               exclude_bimodal = TRUE, 
+                               selection_criterion = "TSS",
+                               cv_kfolds = 5, 
+                               verbose = FALSE)
+calibration
+#> enmpa-class `enmpa_calibration`:
+#> $selected             : Selected models (N = 2)
+#> $summary              : A summary of statistics for all models. 
+#> $calibration_results  : Results obtained from cross-validation for all models. 
+#> $data                 : Data used for calibration. 
+#> $partitioned_data     : k-fold indexes (k = 5)
+#> $weights              : Use of weights (FALSE)
+ 
+summary(calibration)
+```
+
+## Fit and Create Projections for the Selected Model
+
+**What is the model saying for monarchs?**
+
+```{r}
+
+```
+
+## Create a Response Curve for the Two Environmental Parameters
+
+**What are the response curves saying about the two environmental parameters?**
+
+```{r}
+
+```
+
+## Compare the Model Progections and Response Curves of the Milkweed and Monarch Data Sets
+
+**Where would you expect monarchs to be seen due to the presence of milkweed but there were no observations of monarchs? What is a probable explanation for that?**
+
+**Where would you expect milkweed to be seen due to the presence of monarchs but there were no observations of milkweed? What is a probable explanation for that?**
+
+**Are there any other surprises in the models or the data?**
+
+
+
+
