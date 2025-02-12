@@ -81,7 +81,7 @@ Models 29 and 31 were the best. Their names are ModelID_29 and ModelID_31
 ## Fitting and predictions for selected models
 After one or more models are selected, the next steps are the fitting and projection of these models. In this case we are projecting the models to the whole area of interest. Models can be transferred with three options: 
 Free Extrapolation (‘E’) 
-Extrapolation with clamping (‘EC’) 
+Extrapolation with Clamping (‘EC’) 
 No Extrapolation (‘NE’).
 
 

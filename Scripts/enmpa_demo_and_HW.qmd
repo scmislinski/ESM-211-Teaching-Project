@@ -17,9 +17,13 @@ library(geodata)
 library(predicts)
 
 ```
+
 # Cleaning the Data and Linking it to the Bioclim Data
-## Getting the Bio Data 
+
+## Getting the Bio Data
+
 This code gets the bioclim data
+
 ```{r}
 #load bioclim data
 bioclim_data <- worldclim_global(var = "bio",
@@ -45,8 +49,9 @@ obs_data_m <- read_csv(here('Data','Monarch.csv')) |>
 ```
 
 ## Cleaning Bioclim data and Linking it to the Milkweed Data Set
-THIS IS ONLY FOR THE MILKWEED DATA
-I was thinking that we could deminstrate it for one of the data sets and then have them do it for the onther one. 
+
+THIS IS ONLY FOR THE MILKWEED DATA I was thinking that we could deminstrate it for one of the data sets and then have them do it for the onther one.
+
 ```{r}
 # This bit of code allows us to crop the bioclim data for just the section we have for the milkweed.
 max_lat <- ceiling(max(obs_data_mw$latitude))
@@ -74,7 +79,9 @@ points(x = obs_data_mw$longitude,
 
 
 ```
+
 # Preparing the Data for Modeling
+
 ```{r}
 #prepare the data for modeling
 
@@ -85,8 +92,11 @@ bioclim_data <- crop(x = bioclim_data, y = sample_extent)
 # Plot the first of the bioclim variables to check on cropping
 plot(bioclim_data[[1]])
 ```
+
 ## Pseudo-absences
+
 This is how we get pseudo absences out of the milkweed data
+
 ```{r}
 set.seed(1234) #This insures we get the same results every time
 
@@ -123,8 +133,11 @@ bioclim_extract_mw <- terra::extract(x = bioclim_data,
 points_climate_mw <- cbind(all_points_mw, bioclim_extract_mw)
 
 ```
+
 ## Cleaning and Linking the Monarch Data Sets
+
 will do this later once I know it worked for the milkweed data
+
 ```{r}
 
 ```
@@ -154,7 +167,6 @@ calibration
 summary(calibration)
 ```
 
-
 ## Fitting the Model
 
 ```{r}
@@ -177,13 +189,3 @@ plot(c(preds_E$predictions, preds_NE$predictions),
               "Model ID 31 (No Extrapolation)"),
      mar = c(1, 1, 2, 5))
 ```
-
-
-
-
-
-
-
-
-
-

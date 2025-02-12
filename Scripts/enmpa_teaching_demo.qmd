@@ -233,13 +233,13 @@ fits <- fit_selected(calibration)
  #Prediction for the two selected models and their consensus
 preds_E  <- predict_selected(fits, newdata = bioclim_data, extrapolation_type = "E",
                              consensus = TRUE)
-preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "NE",
+preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "EC",
                              consensus = TRUE)
 
 # Visualization of the Models
 plot(c(preds_E$predictions, preds_NE$predictions),
      main = c("Model ID 7 (Free Extrapolation)",
-              "Model ID 7 (No Extrapolation)"),
+              "Model ID 7 (Extrapolation with Clamping)"),
      mar = c(1, 1, 2, 5))
 ```
 

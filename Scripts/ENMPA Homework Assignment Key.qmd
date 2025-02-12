@@ -133,7 +133,8 @@ points_climate_m <- points_climate_m |> select(longitude, latitude, pa, wc2.1_2.
 get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
              type = "lq", mode = "moderate")
 
-points_climate_m <- as.data.frame(points_climate_m, xy = TRUE)
+points_climate_m <- as.data.frame(points_climate_m, xy = TRUE) |>
+  drop_na()
 
 calibration <- calibration_glm(data = points_climate_m, dependent = "pa",
                                independent = c("wc2.1_2.5m_bio_1", "wc2.1_2.5m_bio_12"),
@@ -160,7 +161,21 @@ summary(calibration)
 **What is the model saying for monarchs?**
 
 ```{r}
+#env_vars <- rast(system.file("extdata", "vars.tif", package = "enmpa")) 
+  
+fits <- fit_selected(calibration) 
 
+ #Prediction for the two selected models and their consensus
+preds_E  <- predict_selected(fits, newdata = bioclim_data, extrapolation_type = "E",
+                             consensus = TRUE)
+preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "EC",
+                             consensus = TRUE)
+
+# Visualization of the Models
+plot(c(preds_E$predictions, preds_NE$predictions),
+     main = c("Model ID 29 (Free Extrapolation)", "Model ID 31 (Free Extrapolation)",
+              "Model ID 29 (Extrapolation with Clamping)", "Model ID 31 (Extrapolation with Clamping)"),
+     mar = c(1, 1, 2, 5))
 ```
 
 ## Create a Response Curve for the Two Environmental Parameters
