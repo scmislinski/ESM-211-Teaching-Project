@@ -173,8 +173,8 @@ preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "
 
 # Visualization of the Models
 plot(c(preds_E$predictions, preds_NE$predictions),
-     main = c("Model ID 29 (Free Extrapolation)", "Model ID 31 (Free Extrapolation)",
-              "Model ID 29 (Extrapolation with Clamping)", "Model ID 31 (Extrapolation with Clamping)"),
+     main = c("Model ID 5 (Free Extrapolation)", "Model ID 7 (Free Extrapolation)",
+              "Model ID 5 (Extrapolation with Clamping)", "Model ID 7 (Extrapolation with Clamping)"),
      mar = c(1, 1, 2, 5))
 ```
 
@@ -183,7 +183,11 @@ plot(c(preds_E$predictions, preds_NE$predictions),
 **What are the response curves saying about the two environmental parameters?**
 
 ```{r}
+response_curve(fitted = fits, modelID = "ModelID_7", variable = "wc2.1_2.5m_bio_1")
+response_curve(fitted = fits, modelID = "ModelID_7", variable = "wc2.1_2.5m_bio_12")
 
+response_curve(fitted = fits, modelID = "ModelID_5", variable = "wc2.1_2.5m_bio_1")
+response_curve(fitted = fits, modelID = "ModelID_5", variable = "wc2.1_2.5m_bio_12")
 ```
 
 ## Compare the Model Progections and Response Curves of the Milkweed and Monarch Data Sets
