@@ -29,6 +29,7 @@ library(geodata) #has the
 library(predicts)
 
 ```
+
 ## Getting the Bio Data
 
 This code gets the bioclim data
@@ -41,8 +42,8 @@ bioclim_data <- worldclim_global(var = "bio",
 ```
 
 ## Load, Clean, and Create Psudo Absence Data
-**Plot the monarch data. What are the differences and similarities between the monarch map and the milkweed map that we made in the demo?**
 
+**Plot the monarch data. What are the differences and similarities between the monarch map and the milkweed map that we made in the demo?**
 
 ```{r}
 obs_data_m <- read_csv(here('Data','Monarch.csv')) |>
@@ -197,7 +198,3 @@ response_curve(fitted = fits, modelID = "ModelID_5", variable = "wc2.1_2.5m_bio_
 **Where would you expect milkweed to be seen due to the presence of monarchs but there were no observations of milkweed? What is a probable explanation for that?**
 
 **Are there any other surprises in the models or the data?**
-
-
-
-
