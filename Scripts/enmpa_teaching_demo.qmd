@@ -18,15 +18,15 @@ execute:
 
 # library
 
-Use the library enmpa for the tools Use terra for the mapping
+Use the library enmpa for the tools; Use terra for the mapping
 
 ```{r}
 library(enmpa) #this has the functions for running the models
-library(terra) #this package helps with the visulization
+library(terra) #this package helps with the visualization
 library(tidyverse) #keeps things clean
 library(here) #makes saving and uploading data sets easier
-library(geodata) #has the 
-library(predicts)
+library(geodata) #has the bioclim data
+library(predicts) #helps make spatial predictive modeling
 
 ```
 
@@ -43,13 +43,32 @@ bioclim_data <- worldclim_global(var = "bio",
                                     path = "Data/") 
 ```
 
-This is all the different environmental data stored in this package: Temperature Variables:
+This is all the different environmental data stored in this package: 
 
-BIO1 – Annual Mean Temperature BIO2 – Mean Diurnal Range (Mean of monthly (max temp - min temp)) BIO3 – Isothermality (BIO2/BIO7) (\* 100) BIO4 – Temperature Seasonality (standard deviation \* 100) BIO5 – Max Temperature of Warmest Month BIO6 – Min Temperature of Coldest Month BIO7 – Temperature Annual Range (BIO5-BIO6) BIO8 – Mean Temperature of Wettest Quarter BIO9 – Mean Temperature of Driest Quarter BIO10 – Mean Temperature of Warmest Quarter BIO11 – Mean Temperature of Coldest Quarter
+Temperature Variables:
+BIO1 – Annual Mean Temperature 
+BIO2 – Mean Diurnal Range (Mean of monthly (max temp - min temp)) 
+BIO3 – Isothermality (BIO2/BIO7) (\* 100) 
+BIO4 – Temperature Seasonality (standard deviation \* 100) 
+BIO5 – Max Temperature of Warmest Month 
+BIO6 – Min Temperature of Coldest Month 
+BIO7 – Temperature Annual Range (BIO5-BIO6) 
+BIO8 – Mean Temperature of Wettest Quarter 
+BIO9 – Mean Temperature of Driest Quarter 
+BIO10 – Mean Temperature of Warmest Quarter 
+BIO11 – Mean Temperature of Coldest Quarter
 
-Precipitation Variables: BIO12 – Annual Precipitation BIO13 – Precipitation of Wettest Month BIO14 – Precipitation of Driest Month BIO15 – Precipitation Seasonality (Coefficient of Variation) BIO16 – Precipitation of Wettest Quarter BIO17 – Precipitation of Driest Quarter BIO18 – Precipitation of Warmest Quarter BIO19 – Precipitation of Coldest Quarter
+Precipitation Variables: 
+BIO12 – Annual Precipitation 
+BIO13 – Precipitation of Wettest Month 
+BIO14 – Precipitation of Driest Month 
+BIO15 – Precipitation Seasonality (Coefficient of Variation) 
+BIO16 – Precipitation of Wettest Quarter 
+BIO17 – Precipitation of Driest Quarter 
+BIO18 – Precipitation of Warmest Quarter 
+BIO19 – Precipitation of Coldest Quarter
 
-For this, we're using BIO 1 and BIO 2, Annual Mean Temperature and Annual Precipitation.
+For this, we're using BIO 1 and BIO 12, Annual Mean Temperature and Annual Precipitation.
 
 ## Loading Our Data
 
@@ -59,12 +78,13 @@ obs_data_mw <- read_csv(here("Data","Milkweed.csv")) |>
   select(gbifID, decimalLatitude, decimalLongitude) |> drop_na()|>
   rename(latitude=decimalLatitude) |> 
   rename(longitude=decimalLongitude)
+
 ```
 
-## Cleaning Bioclim data and Linking it to the Milkweed Data Set
+## Plotting the Milkweed Observation Data Set
 
 ```{r}
-# This bit of code allows us to crop the bioclim data for just the section we have for the milkweed.
+# This bit of code allows us to set the extent for the milkweed data we want to focus on
 max_lat <- ceiling(max(obs_data_mw$latitude))
 min_lat <- floor(min(obs_data_mw$latitude))
 max_lon <- ceiling(max(obs_data_mw$longitude))
@@ -78,10 +98,12 @@ world_map <- world(resolution = 3,
                    path = "data/")
 # Crop the map to our area of interest
 my_map <- crop(x = world_map, y = geographic_extent)
+
 # Plot the base map
 plot(my_map,
      axes = TRUE,
      col = "grey95")
+
 # Add the points for individual observations
 points(x = obs_data_mw$longitude,
        y = obs_data_mw$latitude,
@@ -90,69 +112,104 @@ points(x = obs_data_mw$longitude,
        cex = 0.75)
 ```
 
-# Preparing the Data for Modeling
+# Crop and check the bioclim data to match the extent of the occurrences
 
 ```{r}
-#prepare the data for modeling
 
+#create a slightly larger extent 
 sample_extent <- geographic_extent * 1.25
+
 # Crop bioclim data to desired extent
 bioclim_data <- crop(x = bioclim_data, y = sample_extent)
 
 # Plot the first of the bioclim variables to check on cropping
-plot(bioclim_data[[1]]) #this a good way to make sure the boundries are good!
+plot(bioclim_data[[1]]) #this is a good way to make sure the boundaries are good!
 ```
 
 ## Pseudo-absences
 
-This is how we get pseudo absences out of the milkweed data.
+This is how we get pseudo-absences out of the milkweed data. We have recorded occurrences, but we need absence data to run the model, so we generate pseudo-absences by random sampling background points, and considering points without occurrences as absences.
 
 ```{r}
-set.seed(1234) #This insures we get the same results every time. You can always change it to your favorite number
+set.seed(1234) #Given we are carrying out random sampling, this ensures we get the same results every time. You can always change it to your favorite number
 
 # Randomly sample points (same number as our observed points)
 background_mw <- spatSample(x = bioclim_data,
                          size = 500, # generate 500 pseudo-absence points
                          values = FALSE, # don't need values
-                         na.rm = TRUE, # don't sample from ocean
+                         na.rm = TRUE, # don't sample from na values, including the ocean
                          xy = TRUE) # just need coordinates
 
 # Pull out coordinate columns, x (longitude) first, then y (latitude) from
 # saguaro data
 presence_mw  <- obs_data_mw[, c("longitude", "latitude")]
 
-# Add column indicating presence
+# Add column indicating presence - pa for presence vs absence
 presence_mw$pa <- 1
 
-# Convert background data to a data frame
+# Convert background data (where milkweed has not been recorded as occurring) to a data frame
 absence_mw <- as.data.frame(background_mw)
+
 # Update column names so they match presence points
 colnames(absence_mw) <- c("longitude", "latitude")
-# Add column indicating absence
+# Add pseudo-absence values to pa as 0 to indicate absence
 absence_mw$pa <- 0
+
 # Join data into single data frame
 all_points_mw <- rbind(presence_mw, absence_mw)
 
+#Plot presence-absence points on a bioclim raster for visual data exploration
 
-#add the climate data to the milk weed data
+# Plot the first bioclimatic raster layer (mean annual temperature)
+plot(bioclim_data[[1]], main = "Mean Annual Temp Bioclim Data with Presence-Absence Points")
+
+# Add points and colors to distinguish
+points(points_vect, col = ifelse(all_points_mw$pa == 1, "blue", "red"), 
+       pch = 20, cex = 1.0)  # pch=20 makes smaller dots
+
+```
+
+## Thin bioclim datasets and combine with milkweed occurrences
+
+```{r}
+#extract geospatial bioclim data based on milkweed occurrences by lat and long, producing a matrix of bioclim data relevant to the milkweed occurrences
 bioclim_extract_mw <- terra::extract(x = bioclim_data,
                            y = all_points_mw[, c("longitude", "latitude")],
                            ID = FALSE) # No need for an ID column 
 #### for what ever reason, you need to specify that the extract function is coming from the terra package so the "terra::" portion is absolutely critical
 
-# Add the point and climate datasets together
+
+
+# Add the milkweed occurrence points and extracted climate datasets together
 points_climate_mw <- cbind(all_points_mw, bioclim_extract_mw) 
 
-#select the columns that you need. 
+#select the bioclim variables we are using in our model (i.e. bioclim 1 (mean annual temperature) and bioclim 12(mean annual precip)), along with the locations and presence-absence data from the larger dataset
 points_climate_mw <- points_climate_mw |> select(longitude, latitude, pa, wc2.1_2.5m_bio_1, wc2.1_2.5m_bio_12)
 
+
+#Plot the selected bioclim data points to visualize extracted data
+
+# Convert the dataframe to a SpatVector (spatial points object)
+bioclim_points_vect <- vect(points_climate_mw, geom = c("longitude", "latitude"), crs = "EPSG:4326")
+
+#Basemap of our extent
+plot(my_map)
+
+# Overlay only the selected bioclim points
+points(bioclim_points_vect, col = "blue", pch = 20, cex = 1.0)
+
+
 ```
+#Break for Gummy Worm Activity!
 
 # Model Formulations
 
-This is how you set up which models to test. Here, you can change the environmental variables, but for now we're sticking to Annual Mean Temperature and Annual Precipitation.
+This is how you set up which models to test. When we say models, we mean predictive models that will determine the probability of milkweed occurring in a given location based on climatic variables where it has been previously recorded. Here, you can change the environmental variables, but for now we're sticking to Annual Mean Temperature and Annual Precipitation. 
 
 ```{r}
+
+#The dependent variable will be the species (milkweed) and the independent variable will be the bioclim variable. The type of model will be linear quadratic (lq) which means it will examine linear and quadratic relationships between the variables, but not any more complex than that. Similarly, mode = moderate determines how tightly to fit the model to the dataset. This avoids overfitting the model.
+
 get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
              type = "lq", mode = "moderate")
 ```
@@ -161,16 +218,24 @@ get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio
 
 The function calibration_glm() is a general function that allows to perform the following steps:
 
-Partition data in k-folds Create formulas for candidate models Fit and evaluate candidate models Select best performing models Model selection consists of three steps:
+- Partition data in k-folds to determine sections of dataset to train the model on and sections to test it on 
+- Create formulas for candidate models 
+- Fit and evaluate candidate models 
+- Select best performing models 
+
+Model selection consists of three steps:
 
 A first filter to keep the models with ROC AUC \>= 0.5 (statistically significant models). A second filter to maintain only models that meet a selection_criterion (“TSS”: TSS \>= 0.4; or “ESS”: maximum Accuracy - tolerance). From those, pick the ones with delta AIC \<= 2.
+
+ROC AUC stands from Receiver Operating Characteristic Area Under Curve. This is basically just a measure of accuracy, don't worry too much about it. Same with TSS and ESS, we are setting our tolerances for how accurate a model we are willing to accept. AIC is the Akaike Information Criterion, which balances goodness of fit with model complexity.
 
 The results are returned as a list containing:
 
 Selected models ($selected)
 A summary of statistics for all models (*$summary) Results obtained from cross-validation for all models ($calibration_results)
-Input data used (*$data) The weights used (\*$weights)
-The list of partition indices (*$kfold_index_partition)
+Input data used (*$data) 
+The weights used (\*$weights) - we are not using weights
+The list of partition indices (*$kfold_index_partition) - we are doing 5 folds, i.e. sectioning the data into 5 training and testing groups
 
 ```{r}
 points_climate_mw <- as.data.frame(points_climate_mw, xy = TRUE)
@@ -195,11 +260,15 @@ calibration
 summary(calibration)
 ```
 
-Model number 7 was the only one fit well.
+Model number 7 was the only one fit well/met the criteria for accuracy and complexity, as described above.
 
 ## Fitting the Model
 
 After one or more models are selected, the next steps are the fitting and projection of these models. In this case we are projecting the models to the whole area of interest. Models can be transferred with three options: Free Extrapolation (‘E’) Extrapolation with clamping (‘EC’) No Extrapolation (‘NE’).
+
+E - Model can extrapolate trends to any environmental conditions (temps or precip), even if it was not observed in training data.
+EC - "Clamps" environmental values to input env data range to avoid extreme predictions, but can make predictions outside of input data's geographic range
+NE - Prevents predictions outside of training data's env data and geographic ranges
 
 ```{r}
 
@@ -213,6 +282,8 @@ preds_E  <- predict_selected(fits, newdata = bioclim_data, extrapolation_type = 
 preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "EC",
                              consensus = TRUE)
 
+#They will not be different because the both are confined to the same range as the training data
+
 # Visualization of the Models
 plot(c(preds_E$predictions, preds_NE$predictions),
      main = c("Model ID 7 (Free Extrapolation)",
@@ -222,7 +293,9 @@ plot(c(preds_E$predictions, preds_NE$predictions),
 
 ## Response Curve
 
-An important step in understanding the ecological niches with these models is to explore variable response curves. The following lines of code help to do so:
+An important step in understanding the ecological niches with these models is to explore variable response curves. Response curves indicate the model's predictions of probability of occurrence (y-axis) given the environmental variable values (x-axis). This a good gut check. Does it make sense that milkweed occurs at the median precip level and higher temp level in the study area?  If these curves do not make any sense, it's a good time to check your work and your assumptions about correlation. 
+
+The following lines of code help to do so:
 
 ```{r}
 response_curve(fitted = fits, modelID = "ModelID_7", variable = "wc2.1_2.5m_bio_1")
@@ -233,7 +306,7 @@ response_curve(fitted = fits, modelID = "ModelID_7", variable = "wc2.1_2.5m_bio_
 
 Run the demo but with the monarch data set.
 
-## Load, Clean, and Create Psudo Absence Data
+## Load, Clean, and Create Pseudo Absence Data
 
 **Plot the monarch data. What are the differences and similarities between the monarch map and the milkweed map that we made in the demo?**
 
