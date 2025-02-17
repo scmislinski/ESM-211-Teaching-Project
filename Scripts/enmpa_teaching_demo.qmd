@@ -117,7 +117,7 @@ points(x = obs_data_mw$longitude,
 ```{r}
 
 #create a slightly larger extent 
-sample_extent <- geographic_extent * 1.25
+sample_extent <- geographic_extent
 
 # Crop bioclim data to desired extent
 bioclim_data <- crop(x = bioclim_data, y = sample_extent)
@@ -202,6 +202,8 @@ points(bioclim_points_vect, col = "blue", pch = 20, cex = 1.0)
 ```
 #Break for Gummy Worm Activity!
 
+## Running the enmpa Package
+
 # Model Formulations
 
 This is how you set up which models to test. When we say models, we mean predictive models that will determine the probability of milkweed occurring in a given location based on climatic variables where it has been previously recorded. Here, you can change the environmental variables, but for now we're sticking to Annual Mean Temperature and Annual Precipitation. 
@@ -213,8 +215,7 @@ This is how you set up which models to test. When we say models, we mean predict
 get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
              type = "lq", mode = "moderate")
 ```
-
-# Running the enmpa Package
+#Model Calibration
 
 The function calibration_glm() is a general function that allows to perform the following steps:
 
@@ -287,7 +288,7 @@ preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "
 # Visualization of the Models
 plot(c(preds_E$predictions, preds_NE$predictions),
      main = c("Model ID 7 (Free Extrapolation)",
-              "Model ID 7 (Extrapolation with Clamping)"),
+              "Probability of Milkweed Occurrences (EC)"),
      mar = c(1, 1, 2, 5))
 ```
 
