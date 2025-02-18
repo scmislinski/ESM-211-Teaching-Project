@@ -43,30 +43,11 @@ bioclim_data <- worldclim_global(var = "bio",
                                     path = "Data/") 
 ```
 
-This is all the different environmental data stored in this package: 
+This is all the different environmental data stored in this package:
 
-Temperature Variables:
-BIO1 – Annual Mean Temperature 
-BIO2 – Mean Diurnal Range (Mean of monthly (max temp - min temp)) 
-BIO3 – Isothermality (BIO2/BIO7) (\* 100) 
-BIO4 – Temperature Seasonality (standard deviation \* 100) 
-BIO5 – Max Temperature of Warmest Month 
-BIO6 – Min Temperature of Coldest Month 
-BIO7 – Temperature Annual Range (BIO5-BIO6) 
-BIO8 – Mean Temperature of Wettest Quarter 
-BIO9 – Mean Temperature of Driest Quarter 
-BIO10 – Mean Temperature of Warmest Quarter 
-BIO11 – Mean Temperature of Coldest Quarter
+Temperature Variables: BIO1 – Annual Mean Temperature BIO2 – Mean Diurnal Range (Mean of monthly (max temp - min temp)) BIO3 – Isothermality (BIO2/BIO7) (\* 100) BIO4 – Temperature Seasonality (standard deviation \* 100) BIO5 – Max Temperature of Warmest Month BIO6 – Min Temperature of Coldest Month BIO7 – Temperature Annual Range (BIO5-BIO6) BIO8 – Mean Temperature of Wettest Quarter BIO9 – Mean Temperature of Driest Quarter BIO10 – Mean Temperature of Warmest Quarter BIO11 – Mean Temperature of Coldest Quarter
 
-Precipitation Variables: 
-BIO12 – Annual Precipitation 
-BIO13 – Precipitation of Wettest Month 
-BIO14 – Precipitation of Driest Month 
-BIO15 – Precipitation Seasonality (Coefficient of Variation) 
-BIO16 – Precipitation of Wettest Quarter 
-BIO17 – Precipitation of Driest Quarter 
-BIO18 – Precipitation of Warmest Quarter 
-BIO19 – Precipitation of Coldest Quarter
+Precipitation Variables: BIO12 – Annual Precipitation BIO13 – Precipitation of Wettest Month BIO14 – Precipitation of Driest Month BIO15 – Precipitation Seasonality (Coefficient of Variation) BIO16 – Precipitation of Wettest Quarter BIO17 – Precipitation of Driest Quarter BIO18 – Precipitation of Warmest Quarter BIO19 – Precipitation of Coldest Quarter
 
 For this, we're using BIO 1 and BIO 12, Annual Mean Temperature and Annual Precipitation.
 
@@ -160,11 +141,14 @@ all_points_mw <- rbind(presence_mw, absence_mw)
 
 #Plot presence-absence points on a bioclim raster for visual data exploration
 
+# Convert the dataframe to a SpatVector (spatial points object)
+bioclim_points_vect <- vect(all_points_mw, geom = c("longitude", "latitude"), crs = "EPSG:4326")
+
 # Plot the first bioclimatic raster layer (mean annual temperature)
 plot(bioclim_data[[1]], main = "Mean Annual Temp Bioclim Data with Presence-Absence Points")
 
 # Add points and colors to distinguish
-points(points_vect, col = ifelse(all_points_mw$pa == 1, "blue", "red"), 
+points(bioclim_points_vect, col = ifelse(all_points_mw$pa == 1, "blue", "red"), 
        pch = 20, cex = 1.0)  # pch=20 makes smaller dots
 
 ```
@@ -200,13 +184,14 @@ points(bioclim_points_vect, col = "blue", pch = 20, cex = 1.0)
 
 
 ```
+
 #Break for Gummy Worm Activity!
 
 ## Running the enmpa Package
 
 # Model Formulations
 
-This is how you set up which models to test. When we say models, we mean predictive models that will determine the probability of milkweed occurring in a given location based on climatic variables where it has been previously recorded. Here, you can change the environmental variables, but for now we're sticking to Annual Mean Temperature and Annual Precipitation. 
+This is how you set up which models to test. When we say models, we mean predictive models that will determine the probability of milkweed occurring in a given location based on climatic variables where it has been previously recorded. Here, you can change the environmental variables, but for now we're sticking to Annual Mean Temperature and Annual Precipitation.
 
 ```{r}
 
@@ -215,14 +200,15 @@ This is how you set up which models to test. When we say models, we mean predict
 get_formulas(dependent = "Sp", independent = c("wc2.1_2.5_bio_1", "wc2.1_2.5_bio_12"),  
              type = "lq", mode = "moderate")
 ```
+
 #Model Calibration
 
 The function calibration_glm() is a general function that allows to perform the following steps:
 
-- Partition data in k-folds to determine sections of dataset to train the model on and sections to test it on 
-- Create formulas for candidate models 
-- Fit and evaluate candidate models 
-- Select best performing models 
+-   Partition data in k-folds to determine sections of dataset to train the model on and sections to test it on
+-   Create formulas for candidate models
+-   Fit and evaluate candidate models
+-   Select best performing models
 
 Model selection consists of three steps:
 
@@ -234,8 +220,7 @@ The results are returned as a list containing:
 
 Selected models ($selected)
 A summary of statistics for all models (*$summary) Results obtained from cross-validation for all models ($calibration_results)
-Input data used (*$data) 
-The weights used (\*$weights) - we are not using weights
+Input data used (*$data) The weights used (\*$weights) - we are not using weights
 The list of partition indices (*$kfold_index_partition) - we are doing 5 folds, i.e. sectioning the data into 5 training and testing groups
 
 ```{r}
@@ -267,9 +252,7 @@ Model number 7 was the only one fit well/met the criteria for accuracy and compl
 
 After one or more models are selected, the next steps are the fitting and projection of these models. In this case we are projecting the models to the whole area of interest. Models can be transferred with three options: Free Extrapolation (‘E’) Extrapolation with clamping (‘EC’) No Extrapolation (‘NE’).
 
-E - Model can extrapolate trends to any environmental conditions (temps or precip), even if it was not observed in training data.
-EC - "Clamps" environmental values to input env data range to avoid extreme predictions, but can make predictions outside of input data's geographic range
-NE - Prevents predictions outside of training data's env data and geographic ranges
+E - Model can extrapolate trends to any environmental conditions (temps or precip), even if it was not observed in training data. EC - "Clamps" environmental values to input env data range to avoid extreme predictions, but can make predictions outside of input data's geographic range NE - Prevents predictions outside of training data's env data and geographic ranges
 
 ```{r}
 
@@ -286,15 +269,16 @@ preds_NE <- predict_selected(fits, newdata = bioclim_data,extrapolation_type = "
 #They will not be different because the both are confined to the same range as the training data
 
 # Visualization of the Models
+
 plot(c(preds_E$predictions, preds_NE$predictions),
-     main = c("Model ID 7 (Free Extrapolation)",
+     main = c("Probability of Milkweed Occurrences (E)",
               "Probability of Milkweed Occurrences (EC)"),
      mar = c(1, 1, 2, 5))
 ```
 
 ## Response Curve
 
-An important step in understanding the ecological niches with these models is to explore variable response curves. Response curves indicate the model's predictions of probability of occurrence (y-axis) given the environmental variable values (x-axis). This a good gut check. Does it make sense that milkweed occurs at the median precip level and higher temp level in the study area?  If these curves do not make any sense, it's a good time to check your work and your assumptions about correlation. 
+An important step in understanding the ecological niches with these models is to explore variable response curves. Response curves indicate the model's predictions of probability of occurrence (y-axis) given the environmental variable values (x-axis). This a good gut check. Does it make sense that milkweed occurs at the median precip level and higher temp level in the study area? If these curves do not make any sense, it's a good time to check your work and your assumptions about correlation.
 
 The following lines of code help to do so:
 
