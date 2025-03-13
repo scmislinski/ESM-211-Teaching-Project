@@ -191,10 +191,16 @@ response_curve(fitted = fits, modelID = "ModelID_5", variable = "wc2.1_2.5m_bio_
 response_curve(fitted = fits, modelID = "ModelID_5", variable = "wc2.1_2.5m_bio_12")
 ```
 
-## Compare the Model Progections and Response Curves of the Milkweed and Monarch Data Sets
+## Compare the Model Projections and Response Curves of the Milkweed and Monarch Data Sets
 
 **Where would you expect monarchs to be seen due to the presence of milkweed but there were no observations of monarchs? What is a probable explanation for that?**
 
+The model predicts the presence of milkweed in several locations where monarchs are not predicted to occur, including inland and to the north of Santa Barbara and the Channel Islands. It is probable that milkweed can thrive in a wider range of climatic conditions (precipitation and temperature) in which it can exist, as the presence of milkweed is not the only determinant of monarch presence.
+
 **Where would you expect milkweed to be seen due to the presence of monarchs but there were no observations of milkweed? What is a probable explanation for that?**
 
+While milkweed is an important food source for monarch caterpillars, it is not the only food source for monarch butterflies. The butterflies have a variety of food sources, included nectar from flowers and eucalyptus. Monarchs are migratory, and the occurrence data that the model uses may not all come from locations where the species is in the larval stage.
+
 **Are there any other surprises in the models or the data?**
+
+No right answer here.
